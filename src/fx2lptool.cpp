@@ -41,6 +41,7 @@ enum Action {
 	kActionVerify    ,
 	kActionSetid     ,
     kActionDumpEEP   ,
+    kActionInitEEP   ,
 	kActionMAX
 };
 
@@ -58,12 +59,14 @@ int commandRead(CommandLine command);
 int commandVerify(CommandLine command);
 int commandSetid(CommandLine command);
 int commandDumpEeprom(CommandLine command);
+int commandInitEeprom(CommandLine command);
 
 static const Command kCommands[kActionMAX] = {
 	{ kActionRead  , "readeeprom", 4, &commandRead   },
 	{ kActionVerify, "verifyid"  , 4, &commandVerify },
 	{ kActionSetid , "setid"     , 6, &commandSetid  },
-    { kActionDumpEEP  , "dumpeep"      , 5, &commandDumpEeprom   },
+    { kActionDumpEEP , "dumpeep" , 5, &commandDumpEeprom },
+    { kActionInitEEP , "initeep" , 4, &commandInitEeprom }
 };
 
 struct CommandLine {
@@ -219,6 +222,40 @@ int commandDumpEeprom(CommandLine command) {
 	}
 
 	return 0;
+}
+
+int commandInitEeprom(CommandLine command)
+{
+    try {
+		FX2LP fx2lp(command.args[0], command.args[1]);
+
+        byte *data = (byte*)calloc(1, 256);
+
+        data[0] = 0xc0;
+        data[1] = 0x25;
+        data[2] = 0x09;
+        data[3] = 0x81;
+        data[4] = 0x38;
+        data[8] = 0xc5;
+        data[9] = 0xc9;
+        data[10] = 0x0f;
+        data[11] = 0x94;
+        data[12] = 0x08;
+        data[13] = 0xaf;
+        data[14] = 0xff;
+        data[15] = 0xec;
+        data[0x27] = 0x12;
+
+		fx2lp.writeEEPROM(data, 256);
+
+        free(data);
+
+	} catch(Exception &e) {
+		printException(e);
+		return -2;
+	}
+
+    return 0;
 }
 
 std::string readInput() {
