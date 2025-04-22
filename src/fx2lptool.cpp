@@ -39,7 +39,7 @@
 enum Action {
 	kActionRead   = 0,
 	kActionVerify    ,
-	kActionWrite     ,
+	kActionSetid     ,
 	kActionMAX
 };
 
@@ -55,12 +55,12 @@ struct Command {
 
 int commandRead(CommandLine command);
 int commandVerify(CommandLine command);
-int commandWrite(CommandLine command);
+int commandSetid(CommandLine command);
 
 static const Command kCommands[kActionMAX] = {
 	{ kActionRead  , "readeeprom", 4, &commandRead   },
 	{ kActionVerify, "verifyid"  , 4, &commandVerify },
-	{ kActionWrite , "setid"     , 6, &commandWrite  }
+	{ kActionSetid , "setid"     , 6, &commandSetid  },
 };
 
 struct CommandLine {
@@ -190,7 +190,7 @@ std::string readInput() {
 	return buffer;
 }
 
-int commandWrite(CommandLine command) {
+int commandSetid(CommandLine command) {
 	try {
 		FX2LP fx2lp(command.args[0], command.args[1]);
 
