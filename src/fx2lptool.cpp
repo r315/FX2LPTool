@@ -40,6 +40,7 @@ enum Action {
 	kActionRead   = 0,
 	kActionVerify    ,
 	kActionSetid     ,
+    kActionDumpEEP   ,
 	kActionMAX
 };
 
@@ -56,11 +57,13 @@ struct Command {
 int commandRead(CommandLine command);
 int commandVerify(CommandLine command);
 int commandSetid(CommandLine command);
+int commandDumpEeprom(CommandLine command);
 
 static const Command kCommands[kActionMAX] = {
 	{ kActionRead  , "readeeprom", 4, &commandRead   },
 	{ kActionVerify, "verifyid"  , 4, &commandVerify },
 	{ kActionSetid , "setid"     , 6, &commandSetid  },
+    { kActionDumpEEP  , "dumpeep"      , 5, &commandDumpEeprom   },
 };
 
 struct CommandLine {
@@ -141,6 +144,22 @@ void dumpEEPROM(const char *prefix, byte *data, const char *suffix) {
 		            data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], suffix);
 }
 
+void dumpData(const byte *data, int size){
+    std::printf("\n    ");
+
+    for(int i = 0; i < 16; i++){
+        std::printf("%02X ", i);
+    }
+
+    for(int i = 0; i < size; i++){
+        if( (i & 15) == 0)
+            std::printf("\n%02X: ", i & 0xF0);
+
+        std::printf("%02X ", data[i]);
+    }
+    std::putchar('\n');
+}
+
 int commandRead(CommandLine command) {
 	try {
 		FX2LP fx2lp(command.args[0], command.args[1]);
@@ -171,6 +190,32 @@ int commandVerify(CommandLine command) {
 	} catch(Exception &e) {
 		printException(e);
 		return -3;
+	}
+
+	return 0;
+}
+
+int commandDumpEeprom(CommandLine command) {
+	try {
+		FX2LP fx2lp(command.args[0], command.args[1]);
+
+        int size = command.args[2];
+
+        if(size > 1024){ // TODO: select size according installed eeprom
+            throw Exception("Dump size too large");
+        }
+
+        byte *data = (byte*)calloc(1, size);
+
+		fx2lp.readEEPROM(data, size);
+
+		dumpData(data, size);
+
+        free(data);
+
+	} catch(Exception &e) {
+		printException(e);
+		return -2;
 	}
 
 	return 0;
